@@ -256,7 +256,8 @@ joplin.plugins.register({
 							joplin.settings.setValue(settId, selectedNote.id);
 							break;
 					}
-
+					// auto set title as alias
+					joplin.settings.setValue(settAlias, selectedNote.title);
 				},
 			});
 			if (hotkeyA) {
