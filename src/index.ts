@@ -116,6 +116,9 @@ joplin.plugins.register({
 		for (let i = 1; i <= slots; i++) {
 			let settId    = `qgoto_item${i}ID` ;
 			let settAlias = `qgoto_item${i}Alias` ;
+			let settAliasValue = `Item ${i}`
+			
+			console.debug(`settId:${settId}`);
 
 			await joplin.settings.registerSettings({
 				[settId]: {
@@ -128,7 +131,7 @@ joplin.plugins.register({
 					description: ''
 				},
 				[settAlias]: {
-					value: `Item ${i}`,
+					value: settAliasValue,
 					type: SettingItemType.String,
 					section: 'settings.quickGoto',
 					public: true,
@@ -137,6 +140,22 @@ joplin.plugins.register({
 					description: `Set alias for ITEM${i} (Restart required)`
 				},
 			});
+
+
+			try {
+				var val  = await joplin.settings.value(settId) as string;
+				var hashIdx = val.indexOf("#");
+				var noteId  = hashIdx < 0 ? val : val.substring(0,hashIdx);
+				var hash    = hashIdx < 0 ? ""  : val.substring(hashIdx+1);
+				console.debug(`settId:${settId}, val:${val}, noteId:${noteId}`);
+				if (noteId.length > 0) {
+						const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title'] });
+						console.debug(`note:${note}`);
+						await joplin.settings.setValue(settAlias, note.title);
+				}
+			} catch (err) {
+				console.error(`err:${err}`)
+			}
 
 			let cmdJName  = 'gotoJItem' + i;
 			let cmdJLabel = 'Goto';
@@ -149,7 +168,7 @@ joplin.plugins.register({
 			const alias = await joplin.settings.value(settAlias) as string;
 			if (alias) {
 				cmdJLabel = `Goto ${alias}`
-				cmdALabel = `Goto ${alias} - Assign`
+				cmdALabel = `Assign-${alias}`
 			}
 
 			await joplin.commands.register({
@@ -248,7 +267,7 @@ joplin.plugins.register({
 			}
 		}
 
-		await joplin.views.menus.create('quickGotoJMenu', 'Quick Goto', menuJItems, MenuItemLocation.Tools);
-		await joplin.views.menus.create('quickGotoAMenu', 'Quick Goto - Assign', menuAItems, MenuItemLocation.Tools);
+		await joplin.views.menus.create('quickGotoJMenu', 'Quick Goto(Menu change require restart)', menuJItems, MenuItemLocation.Tools);
+		await joplin.views.menus.create('quickGotoAMenu', 'Quick Goto - Assign(Menu change require restart)', menuAItems, MenuItemLocation.Tools);
 	},
 });
