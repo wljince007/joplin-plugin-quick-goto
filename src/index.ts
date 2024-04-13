@@ -150,7 +150,6 @@ joplin.plugins.register({
 				},
 			});
 
-
 			// auto set title as alias
 			if (autoAssignTitleToAlias) {
 				var val  = await joplin.settings.value(settId) as string || '';
@@ -175,7 +174,10 @@ joplin.plugins.register({
 			let cmdALabel = 'Goto';
 			let cmdAKeys  = 'CmdOrCtrl+Alt+' + i;
 
-			const alias = await joplin.settings.value(settAlias) as string;
+			let alias = await joplin.settings.value(settAlias) as string;
+			if(alias === ''){
+				alias = settAliasDefaultValue
+			}
 			if (alias) {
 				cmdJLabel = `Goto ${alias}`
 				cmdALabel = `Goto ${alias} - Assign`
