@@ -94,6 +94,16 @@ joplin.plugins.register({
 			},
 		});
 		await joplin.settings.registerSettings({
+			'qgoto_auto_assign_title_to_alias': {
+				value: false,
+				type: SettingItemType.Bool,
+				section: 'settings.quickGoto',
+				public: true,
+				label: 'Auto Assign Title to Alisa',
+				description: 'Auto assign title to alisa when assign note to item.'
+			},
+		});
+		await joplin.settings.registerSettings({
 			'qgoto_anchor': {
 				value: 'heading',
 				type: SettingItemType.String,
@@ -113,6 +123,7 @@ joplin.plugins.register({
 
 		let menuJItems = []    // Jump menu
 		let menuAItems = []    // Assign menu
+		let autoAssignTitleToAlias = await joplin.settings.value("qgoto_auto_assign_title_to_alias");
 		for (let i = 1; i <= slots; i++) {
 			let settId    = `qgoto_item${i}ID` ;
 			let settAlias = `qgoto_item${i}Alias` ;
@@ -141,21 +152,21 @@ joplin.plugins.register({
 
 
 			// auto set title as alias
-			var val  = await joplin.settings.value(settId) as string || '';
-			var valAlias  = await joplin.settings.value(settAlias) as string;
-			// console.debug(`val:${val},valAlias:${valAlias}`);
-			if (val !== '' && (valAlias === settAliasDefaultValue) || valAlias === '') {
-				var hashIdx = val.indexOf("#");
-				var noteId  = hashIdx < 0 ? val : val.substring(0,hashIdx);
-				console.debug(`settId:${settId}, val:${val}, noteId:${noteId}`);
-				if (noteId.length > 0) {
-						const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title'] });
-						// console.debug(`note:${note}`);
-						await joplin.settings.setValue(settAlias, note.title);
+			if (autoAssignTitleToAlias) {
+				var val  = await joplin.settings.value(settId) as string || '';
+				// console.debug(`val:${val}`);
+				if (val !== '') {
+					var hashIdx = val.indexOf("#");
+					var noteId  = hashIdx < 0 ? val : val.substring(0,hashIdx);
+					console.debug(`settId:${settId}, val:${val}, noteId:${noteId}`);
+					if (noteId.length > 0) {
+							const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title'] });
+							// console.debug(`note:${note}`);
+							await joplin.settings.setValue(settAlias, note.title);
+					}
 				}
 			}
 			
-
 			let cmdJName  = 'gotoJItem' + i;
 			let cmdJLabel = 'Goto';
 			let cmdJKeys  = 'CmdOrCtrl+' + i;
@@ -256,8 +267,12 @@ joplin.plugins.register({
 							joplin.settings.setValue(settId, selectedNote.id);
 							break;
 					}
+					
 					// auto set title as alias
-					joplin.settings.setValue(settAlias, selectedNote.title);
+					let autoAssignTitleToAlias = await joplin.settings.value("qgoto_auto_assign_title_to_alias");
+					if (autoAssignTitleToAlias) {
+						joplin.settings.setValue(settAlias, selectedNote.title);
+					}
 				},
 			});
 			if (hotkeyA) {
